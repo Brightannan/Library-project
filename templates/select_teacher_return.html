@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Select Teacher for Return{% endblock %}
+
+{% block header %}Select Teacher for Book Return{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('borrowing') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Borrowing
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Select Teacher to Return Books</h5>
+            </div>
+            <div class="card-body">
+                {% if teacher_stats %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Teacher Name</th>
+                                <th>Department</th>
+                                <th>Email</th>
+                                <th>Currently Borrowed</th>
+                                <th>Overdue Books</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in teacher_stats %}
+                            <tr>
+                                <td>
+                                    <strong>{{ stat.teacher.full_name }}</strong>
+                                </td>
+                                <td>{{ stat.teacher.department or 'N/A' }}</td>
+                                <td>{{ stat.teacher.email }}</td>
+                                <td>
+                                    {% if stat.borrowed_count > 0 %}
+                                    <span class="badge bg-primary">{{ stat.borrowed_count }} books</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">No books</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if stat.overdue_count > 0 %}
+                                    <span class="badge bg-danger">{{ stat.overdue_count }} overdue</span>
+                                    {% else %}
+                                    <span class="badge bg-success">None</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if stat.borrowed_count > 0 %}
+                                    <a href="{{ url_for('return_teacher_books', teacher_id=stat.teacher.id) }}" 
+                                       class="btn btn-success btn-sm">
+                                        <i class="bi bi-arrow-return-left"></i> Return Books
+                                    </a>
+                                    {% else %}
+                                    <button class="btn btn-secondary btn-sm" disabled>
+                                        <i class="bi bi-check-circle"></i> No Books
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No teachers found with borrowed books.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-person-check" style="font-size: 32px; color: #0d6efd;"></i>
+                                <h6 class="mt-2">Select Teacher</h6>
+                                <p class="text-muted small">Click on a teacher to see and return their books</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-list-check" style="font-size: 32px; color: #198754;"></i>
+                                <h6 class="mt-2">Select Books</h6>
+                                <p class="text-muted small">Choose which books to return</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card text-center">
+                            <div class="card-body">
+                                <i class="bi bi-check-circle" style="font-size: 32px; color: #6f42c1;"></i>
+                                <h6 class="mt-2">Confirm Return</h6>
+                                <p class="text-muted small">Confirm and process the return</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

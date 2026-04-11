@@ -1,0 +1,457 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Delete Books{% endblock %}
+
+{% block header %}Bulk Delete Books{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('books') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Books
+    </a>
+    <button type="button" class="btn btn-danger" onclick="confirmBulkDelete()" id="deleteBtn" disabled>
+        <i class="bi bi-trash"></i> Delete Selected
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" placeholder="Search by title, author, or book number" 
+                       value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="subject">
+                    <option value="">All Subjects</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject }}" {% if subject_filter == subject %}selected{% endif %}>{{ subject }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="grade">
+                    <option value="">All Grades</option>
+                    {% for grade in grades %}
+                    <option value="{{ grade }}" {% if grade_filter == grade %}selected{% endif %}>{{ grade }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="available">
+                    <option value="">All Books</option>
+                    <option value="available" {% if available_filter == 'available' %}selected{% endif %}>Available Only</option>
+                    <option value="borrowed" {% if available_filter == 'borrowed' %}selected{% endif %}>Borrowed Only</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Books Table with Selection -->
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">Select Books to Delete</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST" id="bulkDeleteForm">
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAllBooks()">
+                            <i class="bi bi-check-all"></i> Select All
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAvailableBooks()">
+                            <i class="bi bi-check-circle"></i> Select Available
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deselectAllBooks()">
+                            <i class="bi bi-x-circle"></i> Deselect All
+                        </button>
+                        <button type="button" class="btn btn-outline-info btn-sm" onclick="checkDeletion()">
+                            <i class="bi bi-shield-check"></i> Check Deletion
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <span id="selectionCount" class="badge bg-primary">0 books selected</span>
+                        <span id="deletionStatus" class="badge bg-success ms-2" style="display: none;">Ready to delete</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="50px">
+                                <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()">
+                            </th>
+                            <th>Book Number</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Subject</th>
+                            <th>Status</th>
+                            <th>Copies</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="book_ids" value="{{ book.id }}" class="book-checkbox" id="book_{{ book.id }}">
+                            </td>
+                            <td><strong>{{ book.book_number }}</strong></td>
+                            <td>{{ book.title }}</td>
+                            <td>{{ book.author }}</td>
+                            <td><span class="badge bg-info">{{ book.subject }}</span></td>
+                            <td>
+                                {% if book.is_available %}
+                                <span class="badge bg-success">Available</span>
+                                {% else %}
+                                <span class="badge bg-danger">Borrowed</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ book.copies_available }}/{{ book.total_copies }}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ url_for('edit_book', book_id=book.id) }}" class="btn btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-outline-danger" onclick="deleteSingleBook({{ book.id }}, '{{ book.title }}')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">No books found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Deletion Check Modal -->
+<div class="modal fade" id="deletionCheckModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Deletion Check Results</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="checkResults">
+                    <!-- Results will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Bulk Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteCount">0</strong> selected book(s)?</p>
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i> <strong>Warning:</strong> This action cannot be undone. 
+                    Deleted books will be permanently removed from the system.
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmDeleteCheckbox">
+                    <label class="form-check-label" for="confirmDeleteCheckbox">
+                        I understand this action is permanent and cannot be undone
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" disabled onclick="submitBulkDelete()">
+                    <i class="bi bi-trash"></i> Delete Selected Books
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedBooks = new Set();
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAllCheckbox');
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+        updateSelection(checkbox);
+    });
+    updateSelectionCount();
+}
+
+function selectAllBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        updateSelection(checkbox);
+    });
+    document.getElementById('selectAllCheckbox').checked = true;
+    updateSelectionCount();
+}
+
+function selectAvailableBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const statusBadge = row.querySelector('.badge.bg-success');
+        checkbox.checked = statusBadge !== null;
+        updateSelection(checkbox);
+    });
+    updateSelectionCount();
+}
+
+function deselectAllBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        updateSelection(checkbox);
+    });
+    document.getElementById('selectAllCheckbox').checked = false;
+    updateSelectionCount();
+}
+
+function updateSelection(checkbox) {
+    const bookId = checkbox.value;
+    if (checkbox.checked) {
+        selectedBooks.add(bookId);
+    } else {
+        selectedBooks.delete(bookId);
+    }
+}
+
+function updateSelectionCount() {
+    const count = selectedBooks.size;
+    const countElement = document.getElementById('selectionCount');
+    const deleteBtn = document.getElementById('deleteBtn');
+    
+    countElement.textContent = `${count} book${count !== 1 ? 's' : ''} selected`;
+    
+    if (count > 0) {
+        deleteBtn.disabled = false;
+        countElement.className = 'badge bg-primary';
+    } else {
+        deleteBtn.disabled = true;
+        countElement.className = 'badge bg-secondary';
+    }
+    
+    // Update confirmation modal count
+    document.getElementById('deleteCount').textContent = count;
+}
+
+async function checkDeletion() {
+    const bookIds = Array.from(selectedBooks);
+    
+    if (bookIds.length === 0) {
+        alert('Please select books to check');
+        return;
+    }
+    
+    try {
+        const response = await fetch('/books/delete-check', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ book_ids: bookIds })
+        });
+        
+        const data = await response.json();
+        
+        let resultsHtml = `
+            <div class="alert ${data.can_delete === data.total_selected ? 'alert-success' : 'alert-warning'}">
+                <h6>Deletion Check Results:</h6>
+                <p><strong>Total Selected:</strong> ${data.total_selected} books</p>
+                <p><strong>Can Delete:</strong> ${data.can_delete} books</p>
+                <p><strong>Cannot Delete:</strong> ${data.cannot_delete} books</p>
+            </div>
+        `;
+        
+        if (data.cannot_delete > 0) {
+            resultsHtml += `
+                <div class="alert alert-danger">
+                    <h6>Books that cannot be deleted:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Book Number</th>
+                                    <th>Title</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            data.books.forEach(book => {
+                if (!book.can_delete) {
+                    resultsHtml += `
+                        <tr>
+                            <td>${book.book_number}</td>
+                            <td>${book.title}</td>
+                            <td><span class="badge bg-danger">${book.reason}</span></td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            resultsHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (data.can_delete > 0) {
+            resultsHtml += `
+                <div class="alert alert-success">
+                    <h6>Books ready for deletion:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Book Number</th>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            data.books.forEach(book => {
+                if (book.can_delete) {
+                    resultsHtml += `
+                        <tr>
+                            <td>${book.book_number}</td>
+                            <td>${book.title}</td>
+                            <td><span class="badge bg-success">${book.reason}</span></td>
+                        </tr>
+                    `;
+                }
+            });
+            
+            resultsHtml += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+        
+        document.getElementById('checkResults').innerHTML = resultsHtml;
+        const modal = new bootstrap.Modal(document.getElementById('deletionCheckModal'));
+        modal.show();
+        
+    } catch (error) {
+        alert('Error checking deletion: ' + error);
+    }
+}
+
+function confirmBulkDelete() {
+    if (selectedBooks.size === 0) {
+        alert('Please select books to delete');
+        return;
+    }
+    
+    // Reset confirmation checkbox
+    document.getElementById('confirmDeleteCheckbox').checked = false;
+    document.getElementById('confirmDeleteBtn').disabled = true;
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmDeleteModal'));
+    modal.show();
+}
+
+function deleteSingleBook(bookId, bookTitle) {
+    if (confirm(`Are you sure you want to delete "${bookTitle}"?\n\nThis action cannot be undone.`)) {
+        // Create a form and submit it
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/books/delete/${bookId}`;
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+function submitBulkDelete() {
+    if (document.getElementById('confirmDeleteCheckbox').checked) {
+        document.getElementById('bulkDeleteForm').submit();
+    }
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Update selection when checkboxes change
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelection(this);
+            updateSelectionCount();
+        });
+        
+        // Initialize selected books
+        if (checkbox.checked) {
+            selectedBooks.add(checkbox.value);
+        }
+    });
+    
+    updateSelectionCount();
+    
+    // Enable/disable delete button based on confirmation checkbox
+    document.getElementById('confirmDeleteCheckbox').addEventListener('change', function() {
+        document.getElementById('confirmDeleteBtn').disabled = !this.checked;
+    });
+    
+    // Make rows clickable for selection
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Don't trigger if clicking on checkbox, button, or link
+            if (e.target.type === 'checkbox' || e.target.tagName === 'BUTTON' || 
+                e.target.tagName === 'A' || e.target.closest('button') || e.target.closest('a')) {
+                return;
+            }
+            
+            const checkbox = this.querySelector('.book-checkbox');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                checkbox.dispatchEvent(new Event('change'));
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

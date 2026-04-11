@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory Report{% endblock %}
+
+{% block header %}Inventory Report{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('inventory_report', format='pdf') }}" class="btn btn-outline-info">
+        <i class="bi bi-file-pdf"></i> PDF
+    </a>
+    <a href="{{ url_for('inventory_report', format='csv') }}" class="btn btn-outline-info">
+        <i class="bi bi-file-earmark-text"></i> CSV
+    </a>
+    <a href="{{ url_for('inventory_report', format='excel') }}" class="btn btn-outline-info">
+        <i class="bi bi-file-excel"></i> Excel
+    </a>
+    <a href="{{ url_for('reports') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reports
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0">Library Inventory ({{ books|length }} books)</h5>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-white bg-success">
+                    <div class="card-body text-center">
+                        <h3>{{ books|selectattr('is_available')|list|length }}</h3>
+                        <p>Available Books</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-primary">
+                    <div class="card-body text-center">
+                        <h3>{{ books|rejectattr('is_available')|list|length }}</h3>
+                        <p>Borrowed Books</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-secondary">
+                    <div class="card-body text-center">
+                        <h3>{{ books|sum(attribute='total_copies') }}</h3>
+                        <p>Total Copies</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-white bg-warning">
+                    <div class="card-body text-center">
+                        <h3>{{ books|sum(attribute='copies_available') }}</h3>
+                        <p>Available Copies</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Book Number</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Subject</th>
+                        <th>Grade</th>
+                        <th>Available</th>
+                        <th>Total</th>
+                        <th>Shelf Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    <tr>
+                        <td><strong>{{ book.book_number }}</strong></td>
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td><span class="badge bg-info">{{ book.subject }}</span></td>
+                        <td>{{ book.grade_level or 'N/A' }}</td>
+                        <td>
+                            {% if book.is_available %}
+                            <span class="badge bg-success">{{ book.copies_available }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">0</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ book.total_copies }}</td>
+                        <td>{{ book.shelf_location or 'N/A' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center">No books found in inventory</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

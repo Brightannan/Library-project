@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Network Access Information{% endblock %}
+
+{% block header %}Network Access{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-wifi"></i> Access the Library System from Other Devices
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> Server Information:</h6>
+                    <p class="mb-1"><strong>Computer Name:</strong> {{ computer_name }}</p>
+                    <p class="mb-1"><strong>Server IP Address:</strong> {{ server_ip }}</p>
+                    <p class="mb-1"><strong>Port:</strong> {{ port }}</p>
+                    <p class="mb-0"><strong>Full Address:</strong> <code>http://{{ server_ip }}:{{ port }}</code></p>
+                </div>
+
+                <h6 class="mt-4"><i class="bi bi-phone"></i> How to Access from Other Devices:</h6>
+                <ol class="list-group list-group-numbered mb-4">
+                    <li class="list-group-item">
+                        Make sure all devices are connected to the same network (same WiFi)
+                    </li>
+                    <li class="list-group-item">
+                        On the other device, open a web browser (Chrome, Firefox, Edge, etc.)
+                    </li>
+                    <li class="list-group-item">
+                        Type this address in the browser: <br>
+                        <code class="fs-5">http://{{ server_ip }}:{{ port }}</code>
+                    </li>
+                    <li class="list-group-item">
+                        You should see the login page of the library system
+                    </li>
+                </ol>
+
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6><i class="bi bi-check-circle text-success"></i> Quick Test:</h6>
+                                <p>Try accessing these addresses from other devices:</p>
+                                <ul class="list-unstyled">
+                                    <li>📱 <code>http://{{ server_ip }}:{{ port }}</code></li>
+                                    <li>📱 <code>http://{{ computer_name }}:{{ port }}</code></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-warning bg-opacity-10">
+                            <div class="card-body">
+                                <h6><i class="bi bi-exclamation-triangle text-warning"></i> Troubleshooting:</h6>
+                                <ul class="mb-0">
+                                    <li>Check firewall settings</li>
+                                    <li>Verify all devices on same network</li>
+                                    <li>Try disabling firewall temporarily</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <h6><i class="bi bi-qr-code"></i> Quick Access QR Code:</h6>
+                    <p>Scan this QR code with your phone to access the system:</p>
+                    <div class="text-center">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=http://{{ server_ip }}:{{ port }}" 
+                             alt="QR Code" class="img-fluid border p-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Test Card -->
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-shield-check"></i> Connection Test</h5>
+            </div>
+            <div class="card-body">
+                <p>Test if other devices can reach this server:</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6>From Another Computer</h6>
+                                <p class="mb-2">Open Command Prompt and type:</p>
+                                <code>ping {{ server_ip }}</code>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h6>From Phone/Tablet</h6>
+                                <p class="mb-2">Download a "Ping" app or just try:</p>
+                                <code>http://{{ server_ip }}:{{ port }}</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

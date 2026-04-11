@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Import & Export{% endblock %}
+
+{% block header %}Import & Export Data{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Import Section -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-upload"></i> Import Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="{{ url_for('import_books') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1"><i class="bi bi-book"></i> Import Books</h6>
+                                <small class="text-muted">Import books from CSV, Excel, or JSON files</small>
+                            </div>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('bulk_return_from_file') }}" class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1"><i class="bi bi-arrow-return-left"></i> Bulk Return from File</h6>
+                                <small class="text-muted">Return multiple books using a CSV file</small>
+                            </div>
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Export Section -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-download"></i> Export Data</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item">
+                        <h6><i class="bi bi-book"></i> Export Books</h6>
+                        <div class="btn-group mt-2">
+                            <a href="{{ url_for('export_books', format='csv') }}" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-file-earmark-text"></i> CSV
+                            </a>
+                            <a href="{{ url_for('export_books', format='excel') }}" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </a>
+                            <a href="{{ url_for('export_books', format='json') }}" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-file-code"></i> JSON
+                            </a>
+                            <a href="{{ url_for('export_books', format='pdf') }}" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-file-pdf"></i> PDF
+                            </a>
+                        </div>
+                        <small class="text-muted d-block mt-2">Export all books or apply filters:</small>
+                        <div class="btn-group mt-1">
+                            <a href="{{ url_for('export_books', format='csv', filter='all') }}" class="btn btn-outline-secondary btn-sm">All</a>
+                            <a href="{{ url_for('export_books', format='csv', filter='available') }}" class="btn btn-outline-secondary btn-sm">Available</a>
+                            <a href="{{ url_for('export_books', format='csv', filter='borrowed') }}" class="btn btn-outline-secondary btn-sm">Borrowed</a>
+                        </div>
+                    </div>
+                    
+                    <div class="list-group-item">
+                        <h6><i class="bi bi-clock-history"></i> Export Borrowing History</h6>
+                        <div class="btn-group mt-2">
+                            <a href="{{ url_for('export_borrowings', format='csv') }}" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-file-earmark-text"></i> CSV
+                            </a>
+                            <a href="{{ url_for('export_borrowings', format='excel') }}" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-file-excel"></i> Excel
+                            </a>
+                            <a href="{{ url_for('export_borrowings', format='pdf') }}" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-file-pdf"></i> PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Templates Section -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-arrow-down"></i> Download Templates</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-file-earmark-spreadsheet" style="font-size: 48px; color: #198754;"></i>
+                                <h5 class="mt-3">Book Import Template</h5>
+                                <p class="text-muted">CSV template with example data for importing books</p>
+                                <a href="{{ url_for('download_template', type='books') }}" class="btn btn-success">
+                                    <i class="bi bi-download"></i> Download Template
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-file-earmark-text" style="font-size: 48px; color: #0d6efd;"></i>
+                                <h5 class="mt-3">Bulk Return Template</h5>
+                                <p class="text-muted">CSV template for returning multiple books at once</p>
+                                <a href="#" class="btn btn-primary disabled">
+                                    <i class="bi bi-download"></i> Download Template
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-gear" style="font-size: 48px; color: #6c757d;"></i>
+                                <h5 class="mt-3">Custom Templates</h5>
+                                <p class="text-muted">Create custom templates for specific needs</p>
+                                <button class="btn btn-secondary" disabled>
+                                    <i class="bi bi-tools"></i> Coming Soon
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle"></i> Import/Export Instructions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Supported File Formats:</h6>
+                        <ul>
+                            <li><strong>CSV:</strong> Comma-separated values (Recommended)</li>
+                            <li><strong>Excel:</strong> .xlsx or .xls files</li>
+                            <li><strong>JSON:</strong> JavaScript Object Notation</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Requirements:</h6>
+                        <ul>
+                            <li>Maximum file size: 10MB</li>
+                            <li>Required fields for books: Title, Author, Subject</li>
+                            <li>Use UTF-8 encoding for CSV files</li>
+                            <li>For Excel export: Install openpyxl package</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info mt-3">
+                    <h6><i class="bi bi-lightbulb"></i> Tips:</h6>
+                    <ul class="mb-0">
+                        <li>Always download and use the template for imports</li>
+                        <li>Backup your data before performing bulk operations</li>
+                        <li>Test imports with a small file first</li>
+                        <li>Check the import summary for any errors</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

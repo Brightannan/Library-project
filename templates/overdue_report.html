@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Overdue Books Report{% endblock %}
+
+{% block header %}Overdue Books Report{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('overdue_report', format='pdf') }}" class="btn btn-outline-danger">
+        <i class="bi bi-file-pdf"></i> PDF
+    </a>
+    <a href="{{ url_for('overdue_report', format='csv') }}" class="btn btn-outline-danger">
+        <i class="bi bi-file-earmark-text"></i> CSV
+    </a>
+    <a href="{{ url_for('overdue_report', format='excel') }}" class="btn btn-outline-danger">
+        <i class="bi bi-file-excel"></i> Excel
+    </a>
+    <a href="{{ url_for('reports') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reports
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">Overdue Books ({{ borrowings|length }})</h5>
+    </div>
+    <div class="card-body">
+        {% if borrowings %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Teacher</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        <th>Days Overdue</th>
+                        <th>Fine Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for borrowing in borrowings %}
+                    <tr>
+                        <td>
+                            <strong>{{ borrowing.book.book_number }}</strong><br>
+                            <small>{{ borrowing.book.title }}</small><br>
+                            <small class="text-muted">{{ borrowing.book.author }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ borrowing.borrower.full_name }}</strong><br>
+                            <small class="text-muted">{{ borrowing.borrower.department or 'No department' }}</small><br>
+                            <small>{{ borrowing.borrower.email }}</small>
+                        </td>
+                        <td>{{ borrowing.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ borrowing.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% set days_overdue = (datetime.now() - borrowing.due_date).days %}
+                            <span class="badge bg-danger">{{ days_overdue }} days</span>
+                        </td>
+                        <td>
+                            <strong>${{ "%.2f"|format(borrowing.fine_amount) }}</strong>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-end"><strong>Total Fine:</strong></td>
+                        <td><strong>${{ "%.2f"|format(borrowings|sum(attribute='fine_amount')) }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle"></i> No overdue books found! Great job!
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Books Management{% endblock %}
+
+{% block header %}Books Management{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('add_book') }}" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Add New Book
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" placeholder="Search by title, author, or book number" 
+                       value="{{ search_query }}">
+            </div>
+            
+            <div class="btn-group">
+            <a href="{{ url_for('add_books_bulk') }}" class="btn btn-success">
+                 <i class="bi bi-plus-circle"></i> Add Books
+             </a>
+             <a href="{{ url_for('bulk_delete_books') }}" class="btn btn-danger">
+        <i class="bi bi-trash"></i> Bulk Delete
+    </a>
+            </div>
+            
+
+            <div class="col-md-2">
+                <select class="form-select" name="subject">
+                    <option value="">All Subjects</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject }}" {% if subject_filter == subject %}selected{% endif %}>{{ subject }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="grade">
+                    <option value="">All Grades</option>
+                    {% for grade in grades %}
+                    <option value="{{ grade }}" {% if grade_filter == grade %}selected{% endif %}>{{ grade }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="available">
+                    <option value="">All Books</option>
+                    <option value="available" {% if available_filter == 'available' %}selected{% endif %}>Available Only</option>
+                    <option value="borrowed" {% if available_filter == 'borrowed' %}selected{% endif %}>Borrowed Only</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Books Table -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Book Number</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Subject</th>
+                        <th>Grade</th>
+                        <th>Available</th>
+                        <th>Total Copies</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for book in books %}
+                    <tr>
+                        <td><strong>{{ book.book_number }}</strong></td>
+                        <td>{{ book.title }}</td>
+                        <td>{{ book.author }}</td>
+                        <td><span class="badge bg-info">{{ book.subject }}</span></td>
+                        <td>{{ book.grade_level or 'N/A' }}</td>
+                        <td>
+                            {% if book.is_available %}
+                            <span class="badge bg-success">{{ book.copies_available }}</span>
+                            {% else %}
+                            <span class="badge bg-danger">0</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ book.total_copies }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('edit_book', book_id=book.id) }}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                {% if current_user.role == 'admin' %}
+                                <form method="POST" action="{{ url_for('delete_book', book_id=book.id) }}" 
+                                      onsubmit="return confirm('Are you sure you want to delete this book?');">
+                                    <button type="submit" class="btn btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center">No books found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

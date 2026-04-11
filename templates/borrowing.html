@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Book Borrowing{% endblock %}
+
+{% block header %}Book Borrowing Management{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('bulk_borrow') }}" class="btn btn-success">
+        <i class="bi bi-cart-plus"></i> Bulk Borrow
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <select class="form-select" name="user_id">
+                    <option value="">All Teachers</option>
+                    {% for teacher in teachers %}
+                    <option value="{{ teacher.id }}" {% if user_id == teacher.id %}selected{% endif %}>
+                        {{ teacher.full_name }} ({{ teacher.department }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="status">
+                    <option value="">All Status</option>
+                    <option value="borrowed" {% if status_filter == 'borrowed' %}selected{% endif %}>Borrowed</option>
+                    <option value="returned" {% if status_filter == 'returned' %}selected{% endif %}>Returned</option>
+                    <option value="overdue" {% if status_filter == 'overdue' %}selected{% endif %}>Overdue</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-filter"></i> Filter
+                </button>
+            </div>
+    <div class="col-md-2">
+        <a href="{{ url_for('borrowing') }}" class="btn btn-outline-secondary w-100">
+            Clear
+        </a>
+    </div>
+</form>
+    </div>
+</div>
+
+<!-- Borrowings Table -->
+<div class="card">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('bulk_return') }}" id="returnForm">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
+                            </th>
+                            <th>Book</th>
+                            <th>Teacher</th>
+                            <th>Borrowed Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Fine</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for borrowing in borrowings %}
+                        <tr class="{% if borrowing.status == 'overdue' %}table-danger{% endif %}">
+                            <td>
+                                {% if borrowing.status == 'borrowed' %}
+                                <input type="checkbox" name="borrowing_ids" value="{{ borrowing.id }}">
+                                {% endif %}
+                            </td>
+                            <td>
+                                <strong>{{ borrowing.book.book_number }}</strong><br>
+                                <small>{{ borrowing.book.title }}</small>
+                            </td>
+                            <td>
+                                <a href="{{ url_for('teacher_borrowings', teacher_id=borrowing.user_id) }}">
+                                    {{ borrowing.borrower.full_name }}
+                                </a>
+                            </td>
+                            <td>{{ borrowing.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                            <td>{{ borrowing.due_date.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                {% if borrowing.status == 'borrowed' %}
+                                <span class="badge bg-primary">Borrowed</span>
+                                {% elif borrowing.status == 'returned' %}
+                                <span class="badge bg-success">Returned</span>
+                                {% elif borrowing.status == 'overdue' %}
+                                <span class="badge bg-danger">Overdue</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if borrowing.fine_amount > 0 %}
+                                ${{ "%.2f"|format(borrowing.fine_amount) }}
+                                {% else %}
+                                $0.00
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    {% if borrowing.status == 'borrowed' %}
+                                    <button type="button" class="btn btn-outline-success" onclick="returnSingleBook({{ borrowing.id }})">
+                                        <i class="bi bi-check-circle"></i> Return
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="8" class="text-center">No borrowings found</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            {% if borrowings|selectattr('status', 'equalto', 'borrowed')|list %}
+            <div class="mt-3">
+                <button type="submit" class="btn btn-success" id="returnSelectedBtn">
+                    <i class="bi bi-check-all"></i> Return Selected Books
+                </button>
+                <small class="text-muted ms-2">Select books to return using checkboxes</small>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('input[name="borrowing_ids"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+}
+
+function returnSingleBook(borrowingId) {
+    if (confirm('Return this book?')) {
+        const form = document.getElementById('returnForm');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'hidden';
+        checkbox.name = 'borrowing_ids';
+        checkbox.value = borrowingId;
+        form.appendChild(checkbox);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

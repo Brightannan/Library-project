@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Staff - {{ staff.full_name }}{% endblock %}
+
+{% block header %}Edit Staff Member{% endblock %}
+
+{% block subheader %}Update information for {{ staff.full_name }}{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('staff') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Staff
+    </a>
+    <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+        <i class="bi bi-trash"></i> Delete
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-md-8">
+        <!-- Edit Form -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pencil-square"></i> Edit Staff Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" id="editStaffForm">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="full_name" class="form-label">Full Name *</label>
+                            <input type="text" class="form-control" id="full_name" name="full_name" 
+                                   value="{{ staff.full_name }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email Address *</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ staff.email }}" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username *</label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   value="{{ staff.username }}" required>
+                            <div class="form-text">Used for login</div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="role" class="form-label">Role *</label>
+                            <select class="form-select" id="role" name="role" required>
+                                <option value="teacher" {% if staff.role == 'teacher' %}selected{% endif %}>Teacher</option>
+                                <option value="librarian" {% if staff.role == 'librarian' %}selected{% endif %}>Librarian</option>
+                                <option value="admin" {% if staff.role == 'admin' %}selected{% endif %}>Admin</option>
+                            </select>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle"></i> 
+                                <strong>Teacher:</strong> Can borrow books<br>
+                                <strong>Librarian:</strong> Can manage books and borrowing<br>
+                                <strong>Admin:</strong> Full system access
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="department" class="form-label">Department</label>
+                            <input type="text" class="form-control" id="department" name="department" 
+                                   value="{{ staff.department or '' }}">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="is_active" name="is_active" 
+                                       {% if staff.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    <i class="bi bi-check-circle text-success"></i> Account Active
+                                </label>
+                                <div class="form-text">
+                                    Uncheck to deactivate this account
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Password Reset Section -->
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <h6><i class="bi bi-key"></i> Password Management</h6>
+                            <div class="form-check mb-3">
+                                <input type="checkbox" class="form-check-input" id="reset_password" name="reset_password">
+                                <label class="form-check-label" for="reset_password">
+                                    <strong>Reset Password</strong> - Generate a new temporary password
+                                </label>
+                                <div class="form-text text-warning">
+                                    <i class="bi bi-exclamation-triangle"></i>
+                                    The new password will be shown once. Make sure to save it.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- Staff Statistics -->
+        <div class="card mb-3">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0"><i class="bi bi-graph-up"></i> Account Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-muted small">Account Created</label>
+                    <div class="h6">{{ staff.created_at.strftime('%B %d, %Y') if staff.created_at else 'N/A' }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="text-muted small">Last Login</label>
+                    <div class="h6">{{ staff.last_login.strftime('%B %d, %Y %H:%M') if staff.last_login else 'Never' }}</div>
+                </div>
+
+                <hr>
+
+                <div class="row text-center">
+                    <div class="col-6 mb-2">
+                        <div class="small text-muted">Total Borrowings</div>
+                        <div class="h4">{{ total_borrowings }}</div>
+                    </div>
+                    <div class="col-6 mb-2">
+                        <div class="small text-muted">Active Borrowings</div>
+                        <div class="h4 {% if active_borrowings > 0 %}text-primary{% endif %}">{{ active_borrowings }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted">Overdue Books</div>
+                        <div class="h4 {% if overdue_borrowings > 0 %}text-danger{% endif %}">{{ overdue_borrowings }}</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="small text-muted">Returned Books</div>
+                        <div class="h4 text-success">{{ returned_borrowings }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('teacher_borrowings', teacher_id=staff.id) }}" class="btn btn-outline-primary">
+                        <i class="bi bi-book"></i> View Borrowing History
+                    </a>
+                    {% if staff.role in ['teacher'] %}
+                    <a href="{{ url_for('bulk_borrow') }}?teacher_id={{ staff.id }}" class="btn btn-outline-success">
+                        <i class="bi bi-plus-circle"></i> Borrow Books for this Teacher
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('reports') }}?teacher={{ staff.id }}" class="btn btn-outline-info">
+                        <i class="bi bi-file-text"></i> Generate Report
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                {% if active_borrowings > 0 %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Cannot Delete:</strong> This staff member has {{ active_borrowings }} active borrowing(s).
+                    Please return all books before deleting.
+                </div>
+                {% else %}
+                <p>Are you sure you want to delete <strong>{{ staff.full_name }}</strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    This action cannot be undone. All data associated with this staff member will be permanently removed.
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="confirmDelete">
+                    <label class="form-check-label" for="confirmDelete">
+                        I understand this action is permanent
+                    </label>
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                {% if active_borrowings == 0 %}
+                <form method="POST" action="{{ url_for('delete_staff', staff_id=staff.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                        <i class="bi bi-trash"></i> Delete Staff
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Confirm delete function
+function confirmDelete() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Enable delete button only when checkbox is checked
+document.getElementById('confirmDelete')?.addEventListener('change', function() {
+    document.getElementById('deleteBtn').disabled = !this.checked;
+});
+
+// Form validation
+document.getElementById('editStaffForm')?.addEventListener('submit', function(e) {
+    const username = document.getElementById('username').value;
+    const email = document.getElementById('email').value;
+    
+    // Simple validation
+    if (username.length < 3) {
+        e.preventDefault();
+        alert('Username must be at least 3 characters long');
+        return;
+    }
+    
+    if (!email.includes('@') || !email.includes('.')) {
+        e.preventDefault();
+        alert('Please enter a valid email address');
+        return;
+    }
+});
+
+// Password reset warning
+document.getElementById('reset_password')?.addEventListener('change', function() {
+    if (this.checked) {
+        if (!confirm('This will generate a new temporary password. The old password will no longer work. Continue?')) {
+            this.checked = false;
+        }
+    }
+});
+</script>
+{% endblock %}

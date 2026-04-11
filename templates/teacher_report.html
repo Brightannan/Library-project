@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}{{ teacher.full_name }}'s Borrowing Report{% endblock %}
+
+{% block header %}{{ teacher.full_name }}'s Borrowing Report{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('teacher_report', teacher_id=teacher.id, format='pdf') }}" class="btn btn-outline-success">
+        <i class="bi bi-file-pdf"></i> PDF
+    </a>
+    <a href="{{ url_for('teacher_report', teacher_id=teacher.id, format='csv') }}" class="btn btn-outline-success">
+        <i class="bi bi-file-earmark-text"></i> CSV
+    </a>
+    <a href="{{ url_for('teacher_report', teacher_id=teacher.id, format='excel') }}" class="btn btn-outline-success">
+        <i class="bi bi-file-excel"></i> Excel
+    </a>
+    <a href="{{ url_for('reports') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Reports
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0">Teacher Information</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Name:</strong> {{ teacher.full_name }}</p>
+                <p><strong>Department:</strong> {{ teacher.department or 'N/A' }}</p>
+                <p><strong>Email:</strong> {{ teacher.email }}</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Total Borrowings:</strong> {{ borrowings|length }}</p>
+                <p><strong>Currently Borrowed:</strong> {{ borrowings|selectattr('status', 'equalto', 'borrowed')|list|length }}</p>
+                <p><strong>Overdue Books:</strong> {{ borrowings|selectattr('status', 'equalto', 'overdue')|list|length }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        <th>Returned Date</th>
+                        <th>Status</th>
+                        <th>Fine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for borrowing in borrowings %}
+                    <tr class="{% if borrowing.status == 'overdue' %}table-danger{% endif %}">
+                        <td>
+                            <strong>{{ borrowing.book.book_number }}</strong><br>
+                            <small>{{ borrowing.book.title }}</small><br>
+                            <small class="text-muted">{{ borrowing.book.subject }}</small>
+                        </td>
+                        <td>{{ borrowing.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ borrowing.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if borrowing.returned_date %}
+                            {{ borrowing.returned_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if borrowing.status == 'borrowed' %}
+                            <span class="badge bg-primary">Borrowed</span>
+                            {% elif borrowing.status == 'returned' %}
+                            <span class="badge bg-success">Returned</span>
+                            {% elif borrowing.status == 'overdue' %}
+                            <span class="badge bg-danger">Overdue</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if borrowing.fine_amount > 0 %}
+                            ${{ "%.2f"|format(borrowing.fine_amount) }}
+                            {% else %}
+                            $0.00
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No borrowing history found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

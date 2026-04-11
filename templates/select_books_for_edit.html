@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Select Books to Edit{% endblock %}
+
+{% block header %}Bulk Edit Books - Select Books{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('books') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Books
+    </a>
+    <button type="button" class="btn btn-primary" onclick="proceedToEdit()" id="editBtn" disabled>
+        <i class="bi bi-pencil-square"></i> Edit Selected
+    </button>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="search" placeholder="Search by title, author, or book number" 
+                       value="{{ search_query }}">
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="subject">
+                    <option value="">All Subjects</option>
+                    {% for subject in subjects %}
+                    <option value="{{ subject }}" {% if subject_filter == subject %}selected{% endif %}>{{ subject }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="grade">
+                    <option value="">All Grades</option>
+                    {% for grade in grades %}
+                    <option value="{{ grade }}" {% if grade_filter == grade %}selected{% endif %}>{{ grade }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" name="available">
+                    <option value="">All Books</option>
+                    <option value="available" {% if available_filter == 'available' %}selected{% endif %}>Available Only</option>
+                    <option value="borrowed" {% if available_filter == 'borrowed' %}selected{% endif %}>Borrowed Only</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Books Table with Selection -->
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Select Books to Edit</h5>
+    </div>
+    <div class="card-body">
+        {% if books|length == 0 %}
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle"></i> No books found matching your search criteria.
+        </div>
+        {% endif %}
+        
+        <form method="POST" id="selectForm" action="{{ url_for('bulk_edit_books') }}">
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectAllBooks()">
+                            <i class="bi bi-check-all"></i> Select All
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAvailableBooks()">
+                            <i class="bi bi-check-circle"></i> Select Available
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="deselectAllBooks()">
+                            <i class="bi bi-x-circle"></i> Deselect All
+                        </button>
+                    </div>
+                    <div class="mt-2">
+                        <span id="selectionCount" class="badge bg-primary">0 books selected</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if books|length > 0 %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="50px">
+                                <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll()">
+                            </th>
+                            <th>Book Number</th>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Subject</th>
+                            <th>Grade</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for book in books %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" name="book_ids" value="{{ book.id }}" class="book-checkbox">
+                            </td>
+                            <td><strong>{{ book.book_number }}</strong></td>
+                            <td>{{ book.title }}</td>
+                            <td>{{ book.author }}</td>
+                            <td><span class="badge bg-info">{{ book.subject }}</span></td>
+                            <td>{{ book.grade_level or 'N/A' }}</td>
+                            <td>
+                                {% if book.is_available %}
+                                <span class="badge bg-success">Available</span>
+                                {% else %}
+                                <span class="badge bg-danger">Borrowed</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedBooks = new Set();
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAllCheckbox');
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+        updateSelection(checkbox);
+    });
+    updateSelectionCount();
+}
+
+function selectAllBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        updateSelection(checkbox);
+    });
+    document.getElementById('selectAllCheckbox').checked = true;
+    updateSelectionCount();
+}
+
+function selectAvailableBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        const row = checkbox.closest('tr');
+        const statusBadge = row.querySelector('.badge.bg-success');
+        checkbox.checked = statusBadge !== null;
+        updateSelection(checkbox);
+    });
+    updateSelectionCount();
+}
+
+function deselectAllBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        updateSelection(checkbox);
+    });
+    document.getElementById('selectAllCheckbox').checked = false;
+    updateSelectionCount();
+}
+
+function updateSelection(checkbox) {
+    if (checkbox.checked) {
+        selectedBooks.add(checkbox.value);
+    } else {
+        selectedBooks.delete(checkbox.value);
+    }
+}
+
+function updateSelectionCount() {
+    const count = selectedBooks.size;
+    document.getElementById('selectionCount').textContent = `${count} book${count !== 1 ? 's' : ''} selected`;
+    document.getElementById('editBtn').disabled = count === 0;
+}
+
+function proceedToEdit() {
+    if (selectedBooks.size === 0) {
+        alert('Please select books to edit');
+        return;
+    }
+    
+    // Create form and submit
+    const form = document.getElementById('selectForm');
+    
+    // Clear any existing inputs
+    const existingInputs = form.querySelectorAll('input[name="book_ids"]');
+    existingInputs.forEach(input => input.remove());
+    
+    // Add selected book IDs
+    selectedBooks.forEach(bookId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'book_ids';
+        input.value = bookId;
+        form.appendChild(input);
+    });
+    
+    form.submit();
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelection(this);
+            updateSelectionCount();
+        });
+        if (checkbox.checked) {
+            selectedBooks.add(checkbox.value);
+        }
+    });
+    
+    updateSelectionCount();
+    
+    // Make rows clickable
+    document.querySelectorAll('tbody tr').forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'A') {
+                return;
+            }
+            const checkbox = this.querySelector('.book-checkbox');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+                const event = new Event('change', { bubbles: true });
+                checkbox.dispatchEvent(event);
+            }
+        });
+    });
+});
+</script>
+
+<style>
+tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+    cursor: pointer;
+}
+.book-checkbox {
+    cursor: pointer;
+    transform: scale(1.2);
+}
+</style>
+{% endblock %}

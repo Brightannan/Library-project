@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Book{% endblock %}
+
+{% block header %}Edit Book{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Edit Book Information</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="title" class="form-label">Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ book.title }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="author" class="form-label">Author *</label>
+                            <input type="text" class="form-control" id="author" name="author" 
+                                   value="{{ book.author }}" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="subject" class="form-label">Subject *</label>
+                            <select class="form-select" id="subject" name="subject" required>
+                                <option value="">Select Subject</option>
+                                <option value="English" {% if book.subject == 'English' %}selected{% endif %}>English</option>
+                                <option value="Mathematics" {% if book.subject == 'Mathematics' %}selected{% endif %}>Mathematics</option>
+                                <option value="Science" {% if book.subject == 'Science' %}selected{% endif %}>Science</option>
+                                <option value="History" {% if book.subject == 'History' %}selected{% endif %}>History</option>
+                                <option value="Geography" {% if book.subject == 'Geography' %}selected{% endif %}>Geography</option>
+                                <option value="Physics" {% if book.subject == 'Physics' %}selected{% endif %}>Physics</option>
+                                <option value="Chemistry" {% if book.subject == 'Chemistry' %}selected{% endif %}>Chemistry</option>
+                                <option value="Biology" {% if book.subject == 'Biology' %}selected{% endif %}>Biology</option>
+                                <option value="Computer" {% if book.subject == 'Computer' %}selected{% endif %}>Computer</option>
+                                <option value="Art" {% if book.subject == 'Art' %}selected{% endif %}>Art</option>
+                                <option value="Music" {% if book.subject == 'Music' %}selected{% endif %}>Music</option>
+                                <option value="General" {% if book.subject == 'General' %}selected{% endif %}>General</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="grade_level" class="form-label">Grade Level</label>
+                            <select class="form-select" id="grade_level" name="grade_level">
+                                <option value="">Select Grade</option>
+                                {% for grade in range(1, 13) %}
+                                <option value="Grade {{ grade }}" {% if book.grade_level == 'Grade ' + grade|string %}selected{% endif %}>
+                                    Grade {{ grade }}
+                                </option>
+                                {% endfor %}
+                                <option value="Teacher" {% if book.grade_level == 'Teacher' %}selected{% endif %}>Teacher</option>
+                                <option value="General" {% if book.grade_level == 'General' %}selected{% endif %}>General</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="isbn" class="form-label">ISBN</label>
+                            <input type="text" class="form-control" id="isbn" name="isbn" 
+                                   value="{{ book.isbn or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="publisher" class="form-label">Publisher</label>
+                            <input type="text" class="form-control" id="publisher" name="publisher" 
+                                   value="{{ book.publisher or '' }}">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="publication_year" class="form-label">Publication Year</label>
+                            <input type="number" class="form-control" id="publication_year" name="publication_year" 
+                                   value="{{ book.publication_year or '' }}" min="1900" max="{{ datetime.now().year }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edition" class="form-label">Edition</label>
+                            <input type="text" class="form-control" id="edition" name="edition" 
+                                   value="{{ book.edition or '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="total_copies" class="form-label">Total Copies *</label>
+                            <input type="number" class="form-control" id="total_copies" name="total_copies" 
+                                   value="{{ book.total_copies }}" min="1" required>
+                        </div>
+                        
+                        <div class="col-md-12">
+                            <label for="shelf_location" class="form-label">Shelf Location</label>
+                            <input type="text" class="form-control" id="shelf_location" name="shelf_location" 
+                                   value="{{ book.shelf_location or '' }}" placeholder="e.g., A-12, Row 3">
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <strong>Book Number:</strong> {{ book.book_number }}<br>
+                                <strong>Available Copies:</strong> {{ book.copies_available }} of {{ book.total_copies }}
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                <a href="{{ url_for('books') }}" class="btn btn-secondary me-md-2">
+                                    Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save"></i> Update Book
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

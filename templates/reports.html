@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block header %}Reports{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Overdue Books Report -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">Overdue Books Report</h5>
+            </div>
+            <div class="card-body">
+                <p>Generate a report of all overdue books with details of borrowers and fines.</p>
+                <div class="btn-group">
+                    <a href="{{ url_for('overdue_report') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    <a href="{{ url_for('overdue_report', format='pdf') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-file-pdf"></i> PDF
+                    </a>
+                    <a href="{{ url_for('overdue_report', format='csv') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-file-earmark-text"></i> CSV
+                    </a>
+                    <a href="{{ url_for('overdue_report', format='excel') }}" class="btn btn-outline-danger">
+                        <i class="bi bi-file-excel"></i> Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Report -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Inventory Report</h5>
+            </div>
+            <div class="card-body">
+                <p>Generate a complete inventory report of all books in the library.</p>
+                <div class="btn-group">
+                    <a href="{{ url_for('inventory_report') }}" class="btn btn-outline-info">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    <a href="{{ url_for('inventory_report', format='pdf') }}" class="btn btn-outline-info">
+                        <i class="bi bi-file-pdf"></i> PDF
+                    </a>
+                    <a href="{{ url_for('inventory_report', format='csv') }}" class="btn btn-outline-info">
+                        <i class="bi bi-file-earmark-text"></i> CSV
+                    </a>
+                    <a href="{{ url_for('inventory_report', format='excel') }}" class="btn btn-outline-info">
+                        <i class="bi bi-file-excel"></i> Excel
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <!-- Teacher Reports -->
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Teacher Borrowing Reports</h5>
+            </div>
+            <div class="card-body">
+                <p>Select a teacher to generate their borrowing history report.</p>
+                {% if teachers %}
+                <div class="list-group">
+                    {% for teacher in teachers %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ teacher.full_name }}</h6>
+                                <small class="text-muted">{{ teacher.department or 'No department' }} | {{ teacher.email }}</small>
+                            </div>
+                            <div class="btn-group">
+                                <a href="{{ url_for('teacher_report', teacher_id=teacher.id) }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                <a href="{{ url_for('teacher_report', teacher_id=teacher.id, format='pdf') }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-file-pdf"></i> PDF
+                                </a>
+                                <a href="{{ url_for('teacher_report', teacher_id=teacher.id, format='csv') }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-file-earmark-text"></i> CSV
+                                </a>
+                                <a href="{{ url_for('teacher_report', teacher_id=teacher.id, format='excel') }}" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-file-excel"></i> Excel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No teachers found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Get teachers data from the server
+document.addEventListener('DOMContentLoaded', function() {
+    // This is just a placeholder - you might want to fetch teachers via AJAX
+    console.log('Reports page loaded');
+});
+</script>
+{% endblock %}

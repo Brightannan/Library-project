@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}{{ teacher.full_name }}'s Borrowings{% endblock %}
+
+{% block header %}{{ teacher.full_name }}'s Borrowed Books{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('borrowing') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Borrowings
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <h5>Teacher Information</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Name:</strong> {{ teacher.full_name }}</p>
+                        <p><strong>Department:</strong> {{ teacher.department or 'N/A' }}</p>
+                        <p><strong>Email:</strong> {{ teacher.email }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Current Borrowings:</strong> {{ borrowings|selectattr('status', 'equalto', 'borrowed')|list|length }}</p>
+                        <p><strong>Overdue Books:</strong> {{ borrowings|selectattr('status', 'equalto', 'overdue')|list|length }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Borrowed Date</th>
+                        <th>Due Date</th>
+                        <th>Returned Date</th>
+                        <th>Status</th>
+                        <th>Fine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for borrowing in borrowings %}
+                    <tr class="{% if borrowing.status == 'overdue' %}table-danger{% endif %}">
+                        <td>
+                            <strong>{{ borrowing.book.book_number }}</strong><br>
+                            <small>{{ borrowing.book.title }}</small>
+                        </td>
+                        <td>{{ borrowing.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ borrowing.due_date.strftime('%Y-%m-%d') }}</td>
+                        <td>
+                            {% if borrowing.returned_date %}
+                            {{ borrowing.returned_date.strftime('%Y-%m-%d') }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if borrowing.status == 'borrowed' %}
+                            <span class="badge bg-primary">Borrowed</span>
+                            {% elif borrowing.status == 'returned' %}
+                            <span class="badge bg-success">Returned</span>
+                            {% elif borrowing.status == 'overdue' %}
+                            <span class="badge bg-danger">Overdue</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if borrowing.fine_amount > 0 %}
+                            ${{ "%.2f"|format(borrowing.fine_amount) }}
+                            {% else %}
+                            $0.00
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center">No borrowings found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

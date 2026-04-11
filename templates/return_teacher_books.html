@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+
+{% block title %}Return Books - {{ teacher.full_name }}{% endblock %}
+
+{% block header %}Return Books for {{ teacher.full_name }}{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('select_teacher_for_return') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Teachers
+    </a>
+    <a href="{{ url_for('teacher_borrowings', teacher_id=teacher.id) }}" class="btn btn-info">
+        <i class="bi bi-eye"></i> View All Borrowings
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Teacher Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-person-circle" style="font-size: 48px; color: #0d6efd;"></i>
+                    <h4 class="mt-2">{{ teacher.full_name }}</h4>
+                </div>
+                
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Department:</th>
+                        <td>{{ teacher.department or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ teacher.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Books Borrowed:</th>
+                        <td><span class="badge bg-primary">{{ borrowed_books|length }}</span></td>
+                    </tr>
+                    <tr>
+                        <th>Overdue Books:</th>
+                        <td>
+                            {% set overdue = borrowed_books|selectattr('fine_amount', '>', 0)|list %}
+                            <span class="badge bg-danger">{{ overdue|length }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Total Fine Due:</th>
+                        <td>
+                            <strong>${{ "%.2f"|format(borrowed_books|sum(attribute='fine_amount')) }}</strong>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">Select Books to Return</h5>
+            </div>
+            <div class="card-body">
+                {% if borrowed_books %}
+                <form method="POST" id="returnForm">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="return_date" class="form-label">Return Date *</label>
+                            <input type="date" class="form-control" id="return_date" name="return_date" 
+                                   value="{{ datetime.now().strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="50px">
+                                        <input type="checkbox" id="selectAll" onclick="toggleSelectAll()">
+                                    </th>
+                                    <th>Book Details</th>
+                                    <th>Borrowed Date</th>
+                                    <th>Due Date</th>
+                                    <th>Days Overdue</th>
+                                    <th>Fine</th>
+                                    <th>Pay Fine</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for borrowing in borrowed_books %}
+                                {% set days_overdue = (datetime.now().date() - borrowing.due_date.date()).days if borrowing.due_date.date() < datetime.now().date() else 0 %}
+                                <tr class="{% if days_overdue > 0 %}table-warning{% endif %}">
+                                    <td>
+                                        <input type="checkbox" name="borrowing_ids" value="{{ borrowing.id }}" 
+                                               class="book-checkbox" id="book_{{ borrowing.id }}">
+                                    </td>
+                                    <td>
+                                        <label for="book_{{ borrowing.id }}" class="mb-0" style="cursor: pointer;">
+                                            <strong>{{ borrowing.book.book_number }}</strong><br>
+                                            <small>{{ borrowing.book.title }}</small><br>
+                                            <small class="text-muted">{{ borrowing.book.author }}</small>
+                                        </label>
+                                    </td>
+                                    <td>{{ borrowing.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        {{ borrowing.due_date.strftime('%Y-%m-%d') }}
+                                        {% if days_overdue > 0 %}
+                                        <br><small class="text-danger">Overdue</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if days_overdue > 0 %}
+                                        <span class="badge bg-danger">{{ days_overdue }} days</span>
+                                        {% else %}
+                                        <span class="badge bg-success">On time</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if borrowing.fine_amount > 0 %}
+                                        <strong>${{ "%.2f"|format(borrowing.fine_amount) }}</strong>
+                                        {% else %}
+                                        $0.00
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if borrowing.fine_amount > 0 %}
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="fine_paid_{{ borrowing.id }}" id="fine_paid_{{ borrowing.id }}">
+                                            <label class="form-check-label" for="fine_paid_{{ borrowing.id }}">
+                                                Paid
+                                            </label>
+                                        </div>
+                                        {% else %}
+                                        <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Selected Books:</strong></td>
+                                    <td><strong id="selectedCount">0</strong></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Total Fine to Collect:</strong></td>
+                                    <td><strong id="totalFine">$0.00</strong></td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-success" id="returnBtn" disabled>
+                            <i class="bi bi-check-circle"></i> Return <span id="returnCount">0</span> Selected Books
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i> {{ teacher.full_name }} has no borrowed books to return.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if borrowed_books %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Return Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-primary" onclick="selectOverdueBooks()">
+                        <i class="bi bi-exclamation-triangle"></i> Select Overdue Books
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="selectAllBooks()">
+                        <i class="bi bi-check-all"></i> Select All Books
+                    </button>
+                    <button type="button" class="btn btn-outline-danger" onclick="deselectAllBooks()">
+                        <i class="bi bi-x-circle"></i> Deselect All
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = selectAll.checked;
+    });
+    updateReturnButton();
+}
+
+function selectOverdueBooks() {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        if (row.classList.contains('table-warning')) {
+            const checkbox = row.querySelector('.book-checkbox');
+            if (checkbox) checkbox.checked = true;
+        }
+    });
+    updateReturnButton();
+}
+
+function selectAllBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    document.getElementById('selectAll').checked = true;
+    updateReturnButton();
+}
+
+function deselectAllBooks() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    document.getElementById('selectAll').checked = false;
+    updateReturnButton();
+}
+
+function updateReturnButton() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    const returnBtn = document.getElementById('returnBtn');
+    const returnCount = document.getElementById('returnCount');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    // Update counts
+    returnCount.textContent = checkedCount;
+    selectedCount.textContent = checkedCount;
+    
+    // Calculate total fine for selected books
+    let totalFine = 0;
+    checkboxes.forEach(checkbox => {
+        if (checkbox.checked) {
+            const row = checkbox.closest('tr');
+            const fineCell = row.querySelector('td:nth-child(6)');
+            if (fineCell) {
+                const fineText = fineCell.textContent.trim();
+                const fineMatch = fineText.match(/\$([\d.]+)/);
+                if (fineMatch) {
+                    totalFine += parseFloat(fineMatch[1]);
+                }
+            }
+        }
+    });
+    
+    document.getElementById('totalFine').textContent = '$' + totalFine.toFixed(2);
+    
+    // Enable/disable return button
+    if (checkedCount > 0) {
+        returnBtn.disabled = false;
+        returnBtn.innerHTML = `<i class="bi bi-check-circle"></i> Return ${checkedCount} Selected Book${checkedCount !== 1 ? 's' : ''}`;
+    } else {
+        returnBtn.disabled = true;
+        returnBtn.innerHTML = `<i class="bi bi-check-circle"></i> Return 0 Selected Books`;
+    }
+}
+
+// Add event listeners to checkboxes
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.book-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateReturnButton);
+    });
+    
+    // Add click event to entire row (except checkbox)
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        row.addEventListener('click', function(e) {
+            if (e.target.type !== 'checkbox' && e.target.type !== 'button' && 
+                e.target.tagName !== 'A' && e.target.tagName !== 'BUTTON') {
+                const checkbox = this.querySelector('.book-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    updateReturnButton();
+                }
+            }
+        });
+    });
+    
+    // Form submission handler
+    document.getElementById('returnForm').addEventListener('submit', function(e) {
+        const checkedCount = document.querySelectorAll('.book-checkbox:checked').length;
+        if (checkedCount === 0) {
+            e.preventDefault();
+            alert('Please select at least one book to return.');
+            return false;
+        }
+        
+        if (!confirm(`Return ${checkedCount} book(s)? This action cannot be undone.`)) {
+            e.preventDefault();
+            return false;
+        }
+        
+        // Show loading
+        const returnBtn = document.getElementById('returnBtn');
+        returnBtn.disabled = true;
+        returnBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+    });
+});
+</script>
+{% endblock %}

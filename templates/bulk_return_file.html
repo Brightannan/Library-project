@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Return from File{% endblock %}
+
+{% block header %}Bulk Return from File{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('import_export') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Import/Export
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Bulk Return Books from CSV File</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data" id="returnForm">
+                    <div class="mb-4">
+                        <label for="file" class="form-label">Select CSV File *</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                        <small class="text-muted">Only CSV files are supported for bulk returns</small>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> Important Notes:</h6>
+                        <ul class="mb-0">
+                            <li>The CSV file must contain a column named <code>book_number</code></li>
+                            <li>Only books that are currently borrowed will be returned</li>
+                            <li>Books not found or already returned will be skipped</li>
+                            <li>Maximum 100 books per file</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6>Example CSV Format:</h6>
+                            <pre class="mb-0">
+book_number
+ENG/2024/001
+MAT/2024/003
+SCI/2024/002</pre>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('import_export') }}" class="btn btn-secondary me-md-2">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="returnBtn">
+                            <i class="bi bi-arrow-return-left"></i> Process Returns
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Alternative Manual Return</h5>
+            </div>
+            <div class="card-body">
+                <p>If you prefer to return books manually instead of using a file:</p>
+                <a href="{{ url_for('borrowing') }}" class="btn btn-outline-primary">
+                    <i class="bi bi-list-check"></i> Go to Borrowing Management
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('returnForm').addEventListener('submit', function(e) {
+    const returnBtn = document.getElementById('returnBtn');
+    
+    // Disable button and show loading
+    returnBtn.disabled = true;
+    returnBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing...';
+});
+</script>
+{% endblock %}

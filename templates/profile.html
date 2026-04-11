@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block header %}My Profile{% endblock %}
+
+{% block actions %}
+<div class="btn-group">
+    <a href="{{ url_for('change_password') }}" class="btn btn-warning">
+        <i class="bi bi-key"></i> Change Password
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Personal Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-person-circle" style="font-size: 64px; color: #3498db;"></i>
+                    <h4 class="mt-2">{{ current_user.full_name }}</h4>
+                    {% if current_user.role == 'admin' %}
+                    <span class="badge bg-danger">Admin</span>
+                    {% elif current_user.role == 'librarian' %}
+                    <span class="badge bg-primary">Librarian</span>
+                    {% elif current_user.role == 'teacher' %}
+                    <span class="badge bg-success">Teacher</span>
+                    {% endif %}
+                </div>
+                
+                <table class="table table-borderless">
+                    <tr>
+                        <th>Username:</th>
+                        <td>{{ current_user.username }}</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>{{ current_user.email }}</td>
+                    </tr>
+                    <tr>
+                        <th>Department:</th>
+                        <td>{{ current_user.department or 'N/A' }}</td>
+                    </tr>
+                    <tr>
+                        <th>Member Since:</th>
+                        <td>{{ current_user.created_at.strftime('%Y-%m-%d') }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">My Borrowing History</h5>
+            </div>
+            <div class="card-body">
+                {% if borrowings %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Borrowed Date</th>
+                                <th>Due Date</th>
+                                <th>Returned Date</th>
+                                <th>Status</th>
+                                <th>Fine</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for borrowing in borrowings %}
+                            <tr class="{% if borrowing.status == 'overdue' %}table-danger{% endif %}">
+                                <td>
+                                    <strong>{{ borrowing.book.book_number }}</strong><br>
+                                    <small>{{ borrowing.book.title }}</small>
+                                </td>
+                                <td>{{ borrowing.borrowed_date.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ borrowing.due_date.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    {% if borrowing.returned_date %}
+                                    {{ borrowing.returned_date.strftime('%Y-%m-%d') }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if borrowing.status == 'borrowed' %}
+                                    <span class="badge bg-primary">Borrowed</span>
+                                    {% elif borrowing.status == 'returned' %}
+                                    <span class="badge bg-success">Returned</span>
+                                    {% elif borrowing.status == 'overdue' %}
+                                    <span class="badge bg-danger">Overdue</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if borrowing.fine_amount > 0 %}
+                                    ${{ "%.2f"|format(borrowing.fine_amount) }}
+                                    {% else %}
+                                    $0.00
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> You haven't borrowed any books yet.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,644 @@
+{% extends "base.html" %}
+{% block title %}Bulk Book Borrowing{% endblock %}
+{% block header %}Bulk Book Borrowing{% endblock %}
+
+{% block content %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+    --ink: #0f172a;
+    --ink-light: #475569;
+    --paper: #f8fafc;
+    --white: #ffffff;
+    --accent: #2563eb;
+    --accent-glow: rgba(37,99,235,0.15);
+    --success: #16a34a;
+    --success-bg: #f0fdf4;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --warning: #d97706;
+    --warning-bg: #fffbeb;
+    --border: #e2e8f0;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.1);
+}
+
+* { box-sizing: border-box; }
+body { font-family: 'DM Sans', sans-serif; background: var(--paper); }
+
+.bb-wrap { max-width: 1200px; margin: 0 auto; padding: 24px 20px 120px; }
+
+/* ── Page title ── */
+.bb-title {
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 28px;
+}
+.bb-title-icon {
+    width: 48px; height: 48px; background: var(--ink); border-radius: 14px;
+    display: grid; place-items: center; color: white; font-size: 22px; flex-shrink: 0;
+}
+.bb-title h1 {
+    font-family: 'DM Sans', sans-serif; font-size: 1.6rem;
+    font-weight: 600; color: var(--ink); margin: 0;
+}
+.bb-title p { color: var(--ink-light); font-size: 0.9rem; margin: 2px 0 0; }
+
+/* ── Step layout ── */
+.steps-row {
+    display: grid; grid-template-columns: 340px 1fr;
+    gap: 20px; align-items: start;
+}
+@media (max-width: 900px) { .steps-row { grid-template-columns: 1fr; } }
+
+/* ── Card ── */
+.card {
+    background: var(--white); border-radius: 16px;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    overflow: hidden;
+}
+.card-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+}
+.step-badge {
+    width: 26px; height: 26px; background: var(--ink); color: white;
+    border-radius: 50%; font-size: 0.75rem; font-weight: 700;
+    display: grid; place-items: center; font-family: 'Space Mono', monospace;
+    flex-shrink: 0;
+}
+.card-head h2 { font-size: 0.95rem; font-weight: 600; color: var(--ink); margin: 0; }
+.card-body { padding: 20px; }
+
+/* ── Form fields ── */
+.field { margin-bottom: 16px; }
+.field label {
+    display: block; font-size: 0.82rem; font-weight: 500;
+    color: var(--ink-light); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.field select, .field input[type="date"], .field input[type="text"] {
+    width: 100%; padding: 11px 14px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 0.95rem; font-family: 'DM Sans', sans-serif;
+    color: var(--ink); background: var(--white);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    appearance: none; -webkit-appearance: none;
+}
+.field select:focus, .field input:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ── Search & filter ── */
+.search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-box {
+    flex: 1; position: relative;
+}
+.search-box i {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    color: var(--ink-light); font-size: 0.9rem;
+}
+.search-box input {
+    width: 100%; padding: 10px 12px 10px 36px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    font-size: 0.9rem; font-family: 'DM Sans', sans-serif; color: var(--ink);
+}
+.search-box input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+.filter-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.pill {
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: white; font-size: 0.8rem; font-weight: 500; color: var(--ink-light);
+    cursor: pointer; transition: all 0.15s;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+.pill.active { background: var(--ink); border-color: var(--ink); color: white; }
+
+/* ── Books grid ── */
+.books-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+    gap: 8px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 4px 2px 4px 2px;
+}
+.books-grid::-webkit-scrollbar { width: 6px; }
+.books-grid::-webkit-scrollbar-track { background: transparent; }
+.books-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.book-tile {
+    position: relative; border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 10px 6px 8px;
+    cursor: pointer; text-align: center;
+    transition: all 0.15s; background: white;
+    user-select: none;
+}
+.book-tile:hover { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); transform: translateY(-1px); }
+.book-tile.selected { border-color: var(--accent); background: #eff6ff; box-shadow: 0 0 0 3px var(--accent-glow); }
+.book-tile.unavailable { opacity: 0.4; cursor: not-allowed; background: var(--paper); }
+.book-tile.unavailable:hover { transform: none; border-color: var(--border); box-shadow: none; }
+.book-tile.hidden { display: none; }
+
+.tile-check {
+    position: absolute; top: 5px; right: 5px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); color: white;
+    display: none; place-items: center; font-size: 9px;
+}
+.book-tile.selected .tile-check { display: grid; }
+
+.tile-code {
+    font-family: 'Space Mono', monospace; font-size: 0.72rem;
+    font-weight: 700; color: var(--ink); word-break: break-all;
+    line-height: 1.3; margin-bottom: 4px;
+}
+.tile-subject {
+    font-size: 0.68rem; color: var(--ink-light);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* tooltip on hover */
+.book-tile::before {
+    content: attr(data-tooltip);
+    position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%);
+    background: var(--ink); color: white;
+    padding: 5px 8px; border-radius: 7px; font-size: 0.75rem;
+    white-space: nowrap; max-width: 200px; white-space: normal; text-align: left;
+    opacity: 0; pointer-events: none; transition: opacity 0.15s;
+    z-index: 50; line-height: 1.4;
+}
+.book-tile:hover::before { opacity: 1; }
+
+/* ── Selection summary bar ── */
+.summary-bar {
+    background: var(--ink); color: white;
+    border-radius: 14px; padding: 14px 18px;
+    margin-top: 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    transition: opacity 0.2s;
+}
+.summary-bar.empty { opacity: 0.35; }
+.summary-count { font-family: 'Space Mono', monospace; font-size: 1.1rem; font-weight: 700; }
+.summary-label { font-size: 0.85rem; opacity: 0.7; margin-top: 1px; }
+.summary-chips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; min-width: 0; }
+.summary-chip {
+    background: rgba(255,255,255,0.15); padding: 3px 10px;
+    border-radius: 20px; font-size: 0.78rem; font-family: 'Space Mono', monospace;
+    display: flex; align-items: center; gap: 5px;
+}
+.summary-chip button {
+    background: none; border: none; color: white; cursor: pointer;
+    padding: 0; font-size: 0.7rem; opacity: 0.7; line-height: 1;
+}
+.summary-chip button:hover { opacity: 1; }
+.summary-more { opacity: 0.6; font-size: 0.8rem; }
+
+/* ── Borrow button ── */
+.borrow-btn {
+    width: 100%; padding: 14px;
+    background: var(--accent); color: white; border: none;
+    border-radius: 12px; font-size: 1rem; font-weight: 600;
+    font-family: 'DM Sans', sans-serif; cursor: pointer;
+    transition: all 0.15s; margin-top: 14px;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.borrow-btn:hover:not(:disabled) { background: #1d4ed8; box-shadow: 0 6px 20px rgba(37,99,235,0.35); transform: translateY(-1px); }
+.borrow-btn:disabled { background: var(--border); color: var(--ink-light); cursor: not-allowed; transform: none; }
+
+/* ── Quick add strip ── */
+.quick-add {
+    display: flex; gap: 8px; margin-bottom: 10px;
+}
+.quick-add input {
+    flex: 1; padding: 9px 12px; border: 1.5px solid var(--border);
+    border-radius: 10px; font-size: 0.88rem; font-family: 'Space Mono', monospace;
+}
+.quick-add input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.quick-add button {
+    padding: 9px 16px; background: var(--ink); color: white; border: none;
+    border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap;
+    transition: background 0.15s;
+}
+.quick-add button:hover { background: var(--accent); }
+
+/* ── Action row ── */
+.action-row { display: flex; gap: 8px; margin-bottom: 10px; }
+.action-btn {
+    padding: 7px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; background: white; font-size: 0.82rem;
+    font-weight: 500; cursor: pointer; color: var(--ink-light);
+    transition: all 0.15s;
+}
+.action-btn:hover { border-color: var(--ink); color: var(--ink); }
+.action-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+/* ── Stats ── */
+.stats-row { display: flex; gap: 8px; margin-bottom: 14px; }
+.stat-chip {
+    flex: 1; background: var(--paper); border-radius: 10px;
+    padding: 10px; text-align: center; border: 1px solid var(--border);
+}
+.stat-num { font-family: 'Space Mono', monospace; font-size: 1.2rem; font-weight: 700; color: var(--ink); }
+.stat-lbl { font-size: 0.72rem; color: var(--ink-light); margin-top: 2px; }
+
+/* ── Empty state ── */
+.empty-msg {
+    text-align: center; padding: 40px 20px;
+    color: var(--ink-light); font-size: 0.9rem;
+}
+.empty-msg i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: 0.4; }
+
+/* ── Toast ── */
+.toast-wrap {
+    position: fixed; bottom: 24px; right: 24px; z-index: 999;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+    background: var(--ink); color: white; padding: 10px 16px;
+    border-radius: 10px; font-size: 0.85rem; box-shadow: var(--shadow-lg);
+    animation: slideIn 0.2s ease; pointer-events: auto;
+}
+.toast.success { background: var(--success); }
+.toast.warning { background: var(--warning); }
+.toast.error { background: var(--danger); }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes fadeOut { to { opacity: 0; transform: translateX(20px); } }
+</style>
+
+<div class="bb-wrap">
+
+    <div class="bb-title">
+        <div class="bb-title-icon"><i class="bi bi-journal-bookmark-fill"></i></div>
+        <div>
+            <h1>Bulk Book Borrowing</h1>
+            <p>Select books, assign a teacher, set a due date — done.</p>
+        </div>
+    </div>
+
+    <!-- Single form wrapping EVERYTHING -->
+    <form method="POST" id="borrowForm">
+
+    <div class="steps-row">
+
+        <!-- ── LEFT PANEL: Details ── -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+            <!-- Step 1: Teacher -->
+            <div class="card">
+                <div class="card-head">
+                    <span class="step-badge">1</span>
+                    <h2>Select Teacher</h2>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <label>Teacher</label>
+                        <select name="teacher_id" id="teacher_id" required>
+                            <option value="" disabled selected>Choose a teacher…</option>
+                            {% for teacher in teachers %}
+                            <option value="{{ teacher.id }}">
+                                {{ teacher.full_name }}{% if teacher.department %} — {{ teacher.department }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% if not teachers %}
+                    <p style="color:var(--warning); font-size:0.85rem; margin:0;">
+                        <i class="bi bi-exclamation-triangle"></i> No teachers found. Add staff first.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Step 2: Due Date -->
+            <div class="card">
+                <div class="card-head">
+                    <span class="step-badge">2</span>
+                    <h2>Set Due Date</h2>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <label>Return By</label>
+                        <input type="date" name="due_date" id="due_date" required>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button type="button" class="pill" onclick="setDueDate(7)">1 week</button>
+                        <button type="button" class="pill" onclick="setDueDate(14)">2 weeks</button>
+                        <button type="button" class="pill" onclick="setDueDate(30)">1 month</button>
+                        <button type="button" class="pill" onclick="setDueDate(90)">1 term</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Summary & Submit -->
+            <div class="card">
+                <div class="card-head">
+                    <span class="step-badge">3</span>
+                    <h2>Review &amp; Borrow</h2>
+                </div>
+                <div class="card-body">
+                    <div class="stats-row">
+                        <div class="stat-chip">
+                            <div class="stat-num" id="statTotal">{{ books|length }}</div>
+                            <div class="stat-lbl">Total Books</div>
+                        </div>
+                        <div class="stat-chip">
+                            <div class="stat-num" id="statAvail" style="color:var(--success);">
+                                {{ books|selectattr('is_available')|list|length }}
+                            </div>
+                            <div class="stat-lbl">Available</div>
+                        </div>
+                        <div class="stat-chip">
+                            <div class="stat-num" id="statSelected" style="color:var(--accent);">0</div>
+                            <div class="stat-lbl">Selected</div>
+                        </div>
+                    </div>
+
+                    <div class="summary-bar empty" id="summaryBar">
+                        <div>
+                            <div class="summary-count" id="summaryCount">0 books</div>
+                            <div class="summary-label">selected</div>
+                        </div>
+                        <div class="summary-chips" id="summaryChips"></div>
+                    </div>
+
+                    <button type="submit" class="borrow-btn" id="borrowBtn" disabled>
+                        <i class="bi bi-check2-circle"></i>
+                        <span id="borrowBtnText">Select books to borrow</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ── RIGHT PANEL: Book Picker ── -->
+        <div class="card">
+            <div class="card-head">
+                <span class="step-badge">4</span>
+                <h2>Pick Books</h2>
+                <span style="margin-left:auto; font-size:0.8rem; color:var(--ink-light);">
+                    Click a book to select it
+                </span>
+            </div>
+            <div class="card-body">
+
+                <!-- Quick code entry -->
+                <div class="quick-add">
+                    <input type="text" id="codeInput" placeholder="Type book code e.g. ENG/2026/001 then press Enter" autocomplete="off">
+                    <button type="button" onclick="addByCode()">Add</button>
+                </div>
+
+                <!-- Search -->
+                <div class="search-row">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" id="searchInput" placeholder="Search by code, title, author…">
+                    </div>
+                </div>
+
+                <!-- Subject filter pills -->
+                <div class="filter-pills" id="subjectFilters">
+                    <button type="button" class="pill active" data-subject="all" onclick="filterSubject(this)">All</button>
+                    {% for subject in subjects %}
+                    <button type="button" class="pill" data-subject="{{ subject }}" onclick="filterSubject(this)">{{ subject }}</button>
+                    {% endfor %}
+                </div>
+
+                <!-- Action row -->
+                <div class="action-row">
+                    <button type="button" class="action-btn" onclick="selectAllVisible()">✓ Select all visible</button>
+                    <button type="button" class="action-btn danger" onclick="clearAll()">✕ Clear all</button>
+                </div>
+
+                <!-- Book tiles grid -->
+                {% if books %}
+                <div class="books-grid" id="booksGrid">
+                    {% for book in books %}
+                    <div class="book-tile {% if not book.is_available %}unavailable{% endif %}"
+                         id="tile-{{ book.id }}"
+                         data-id="{{ book.id }}"
+                         data-code="{{ book.book_number }}"
+                         data-title="{{ book.title|e }}"
+                         data-author="{{ book.author|e }}"
+                         data-subject="{{ book.subject }}"
+                         data-available="{{ '1' if book.is_available else '0' }}"
+                         data-tooltip="{{ book.title }} | {{ book.author }} | {{ book.subject }}{% if not book.is_available %} | ⛔ Borrowed{% endif %}"
+                         onclick="toggleTile(this)">
+                        <div class="tile-check"><i class="bi bi-check"></i></div>
+                        <div class="tile-code">{{ book.book_number }}</div>
+                        <div class="tile-subject">{{ book.subject[:12] }}</div>
+                        <!-- Hidden checkbox that the form actually submits -->
+                        <input type="checkbox" name="book_ids" value="{{ book.id }}"
+                               class="book-checkbox" style="display:none;"
+                               {% if not book.is_available %}disabled{% endif %}>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-msg">
+                    <i class="bi bi-book"></i>
+                    No books in the system yet.<br>
+                    <a href="{{ url_for('add_books_bulk') }}" style="color:var(--accent);">Add books first →</a>
+                </div>
+                {% endif %}
+
+            </div>
+        </div>
+
+    </div>
+    </form>
+
+</div>
+
+<!-- Toast container -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<script>
+// ── State ───────────────────────────────────────────
+let selectedIds = new Set();
+let currentSubject = 'all';
+let currentSearch = '';
+
+// ── Init ─────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+    // Default due date = 2 weeks from today
+    setDueDate(14);
+
+    // Search input
+    document.getElementById('searchInput').addEventListener('input', e => {
+        currentSearch = e.target.value.toLowerCase().trim();
+        applyFilters();
+    });
+
+    // Code input — press Enter to add
+    document.getElementById('codeInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addByCode(); }
+    });
+});
+
+// ── Due date shortcuts ───────────────────────────────
+function setDueDate(days) {
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    document.getElementById('due_date').value = d.toISOString().split('T')[0];
+
+    // Update pill active state
+    const dayMap = {7:'1 week', 14:'2 weeks', 30:'1 month', 90:'1 term'};
+    document.querySelectorAll('.pill[onclick]').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.pill[onclick]').forEach(p => {
+        if (p.textContent.trim() === dayMap[days]) p.classList.add('active');
+    });
+}
+
+// ── Toggle tile selection ─────────────────────────────
+function toggleTile(tile) {
+    if (tile.dataset.available === '0') {
+        toast('This book is already borrowed', 'warning');
+        return;
+    }
+    const id = tile.dataset.id;
+    const cb = tile.querySelector('.book-checkbox');
+    if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+        tile.classList.remove('selected');
+        cb.checked = false;
+        toast(`Removed ${tile.dataset.code}`, 'default');
+    } else {
+        selectedIds.add(id);
+        tile.classList.add('selected');
+        cb.checked = true;
+        toast(`Added ${tile.dataset.code} — ${tile.dataset.title.substring(0,30)}`, 'success');
+    }
+    updateSummary();
+}
+
+// ── Add by typed code ─────────────────────────────────
+function addByCode() {
+    const input = document.getElementById('codeInput');
+    const codes = input.value.split(',').map(s => s.trim()).filter(Boolean);
+    let added = 0, notFound = 0, unavail = 0;
+
+    codes.forEach(code => {
+        const tile = document.querySelector(`.book-tile[data-code="${code}"]`);
+        if (!tile) { notFound++; return; }
+        if (tile.dataset.available === '0') { unavail++; return; }
+        if (!selectedIds.has(tile.dataset.id)) {
+            selectedIds.add(tile.dataset.id);
+            tile.classList.add('selected');
+            tile.querySelector('.book-checkbox').checked = true;
+            // Scroll to it
+            tile.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            added++;
+        }
+    });
+
+    if (added) toast(`Added ${added} book(s)`, 'success');
+    if (notFound) toast(`${notFound} code(s) not found`, 'warning');
+    if (unavail) toast(`${unavail} book(s) already borrowed`, 'warning');
+    input.value = '';
+    updateSummary();
+}
+
+// ── Subject filter ────────────────────────────────────
+function filterSubject(btn) {
+    document.querySelectorAll('#subjectFilters .pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    currentSubject = btn.dataset.subject;
+    applyFilters();
+}
+
+// ── Apply search + subject filters ───────────────────
+function applyFilters() {
+    document.querySelectorAll('.book-tile').forEach(tile => {
+        const matchSubject = currentSubject === 'all' || tile.dataset.subject === currentSubject;
+        const matchSearch = !currentSearch ||
+            tile.dataset.code.toLowerCase().includes(currentSearch) ||
+            tile.dataset.title.toLowerCase().includes(currentSearch) ||
+            tile.dataset.author.toLowerCase().includes(currentSearch);
+        tile.classList.toggle('hidden', !(matchSubject && matchSearch));
+    });
+}
+
+// ── Select all visible available ──────────────────────
+function selectAllVisible() {
+    let count = 0;
+    document.querySelectorAll('.book-tile:not(.hidden):not(.unavailable)').forEach(tile => {
+        if (!selectedIds.has(tile.dataset.id)) {
+            selectedIds.add(tile.dataset.id);
+            tile.classList.add('selected');
+            tile.querySelector('.book-checkbox').checked = true;
+            count++;
+        }
+    });
+    toast(`Selected ${count} book(s)`, 'success');
+    updateSummary();
+}
+
+// ── Clear all ─────────────────────────────────────────
+function clearAll() {
+    selectedIds.clear();
+    document.querySelectorAll('.book-tile.selected').forEach(tile => {
+        tile.classList.remove('selected');
+        tile.querySelector('.book-checkbox').checked = false;
+    });
+    toast('Cleared all selections', 'default');
+    updateSummary();
+}
+
+// ── Update summary panel ──────────────────────────────
+function updateSummary() {
+    const count = selectedIds.size;
+    document.getElementById('statSelected').textContent = count;
+    document.getElementById('summaryCount').textContent = count + (count === 1 ? ' book' : ' books');
+
+    const bar = document.getElementById('summaryBar');
+    bar.classList.toggle('empty', count === 0);
+
+    const btn = document.getElementById('borrowBtn');
+    const btnText = document.getElementById('borrowBtnText');
+    btn.disabled = count === 0;
+    btnText.textContent = count > 0
+        ? `Borrow ${count} book${count > 1 ? 's' : ''} →`
+        : 'Select books to borrow';
+
+    // Chips
+    const chipsEl = document.getElementById('summaryChips');
+    const ids = [...selectedIds];
+    const show = ids.slice(0, 5);
+    let html = show.map(id => {
+        const tile = document.getElementById('tile-' + id);
+        const code = tile ? tile.dataset.code : id;
+        return `<span class="summary-chip">${code}
+            <button type="button" onclick="removeTile('${id}')">&times;</button>
+        </span>`;
+    }).join('');
+    if (ids.length > 5) html += `<span class="summary-more">+${ids.length - 5} more</span>`;
+    chipsEl.innerHTML = html;
+}
+
+// ── Remove from summary chip ──────────────────────────
+function removeTile(id) {
+    selectedIds.delete(id);
+    const tile = document.getElementById('tile-' + id);
+    if (tile) {
+        tile.classList.remove('selected');
+        tile.querySelector('.book-checkbox').checked = false;
+    }
+    updateSummary();
+}
+
+// ── Toast notifications ───────────────────────────────
+function toast(msg, type = 'default') {
+    const wrap = document.getElementById('toastWrap');
+    const el = document.createElement('div');
+    el.className = `toast ${type === 'default' ? '' : type}`;
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(() => {
+        el.style.animation = 'fadeOut 0.3s ease forwards';
+        setTimeout(() => el.remove(), 300);
+    }, 2200);
+}
+</script>
+{% endblock %}

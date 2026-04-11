@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #4CAF50; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .book-details { 
+            background-color: #e8f5e8; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .info-box {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .fine-box {
+            background-color: {% if fine_amount > 0 %}#ffebee{% else %}#e8f5e8{% endif %};
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 4px solid {% if fine_amount > 0 %}#f44336{% else %}#4CAF50{% endif %};
+        }
+        .footer { 
+            margin-top: 20px; 
+            padding-top: 20px; 
+            border-top: 1px solid #ddd; 
+            font-size: 12px; 
+            color: #777; 
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        td.label {
+            font-weight: bold;
+            width: 40%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h2>✅ Book Return Confirmation</h2>
+        </div>
+        <div class="content">
+            <h3>Hello {{ borrower.full_name }},</h3>
+            <p>This email confirms that you have successfully returned the following book to the school library:</p>
+            
+            <div class="book-details">
+                <h4>Returned Book Information:</h4>
+                <table>
+                    <tr>
+                        <td class="label">Book Title:</td>
+                        <td><strong>{{ book.title }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Author:</td>
+                        <td>{{ book.author }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Book Number:</td>
+                        <td>{{ book.book_number }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Subject:</td>
+                        <td>{{ book.subject }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="info-box">
+                <h4>Return Details:</h4>
+                <table>
+                    <tr>
+                        <td class="label">Borrowed Date:</td>
+                        <td>{{ borrowing.borrowed_date.strftime('%B %d, %Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Due Date:</td>
+                        <td>{{ borrowing.due_date.strftime('%B %d, %Y') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Returned Date:</td>
+                        <td><strong>{{ borrowing.returned_date.strftime('%B %d, %Y') }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Return Processed by:</td>
+                        <td>{{ current_user.full_name }}</td>
+                    </tr>
+                </table>
+            </div>
+            
+            <div class="fine-box">
+                <h4>💰 Fine Information:</h4>
+                {% if fine_amount > 0 %}
+                    <p style="color: #f44336; font-size: 18px;"><strong>Fine Amount: ${{ "%.2f"|format(fine_amount) }}</strong></p>
+                    <p>This fine was {% if fine_paid %}PAID{% else %}NOT PAID{% endif %} at the time of return.</p>
+                    {% if not fine_paid %}
+                    <p>Please settle this fine at the library counter.</p>
+                    {% endif %}
+                {% else %}
+                    <p style="color: #4CAF50;"><strong>No fines incurred. Thank you for returning on time!</strong></p>
+                {% endif %}
+            </div>
+
+            <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 10px; margin-bottom: 20px; border-radius: 5px;">
+    <p style="margin: 0; color: #155724;">
+        <strong>📎 PDF Receipt Attached:</strong> A PDF receipt (Receipt #{{ receipt_number }}) is attached to this email. Please download and keep it for your records.
+    </p>
+</div>
+            
+            <p>Thank you for using the school library system. We hope you enjoyed the book!</p>
+            
+            <p>Come visit us again soon! 📚</p>
+        </div>
+        <div class="footer">
+            <p>School Library System - {{ datetime.now().year }}</p>
+            <p>This is an automated message. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>
