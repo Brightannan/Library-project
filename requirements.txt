@@ -11,4 +11,5 @@ itsdangerous==2.2.0
 python-dotenv==1.0.1
 SQLAlchemy==2.0.36
 gunicorn==21.2.0
+gevent==24.2.1
 psycopg2-binary==2.9.9

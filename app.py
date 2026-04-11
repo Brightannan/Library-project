@@ -250,6 +250,17 @@ def _register_routes(app, db, mail, User, Book, BookBorrowing, Log):
 
     # ── Email helpers ─────────────────────────────────────────────────────────
 
+    def _send_mail_async(msg):
+        """Send email in a background thread so it never blocks a request."""
+        import threading
+        def send():
+            try:
+                with app.app_context():
+                    mail.send(msg)
+            except Exception as e:
+                logger.error(f"Background email error: {e}")
+        threading.Thread(target=send, daemon=True).start()
+
     def send_borrow_notification(borrowing, book, borrower, is_bulk=False, books_list=None):
         try:
             pdf_buffer, receipt_number = generate_borrow_receipt_pdf(
@@ -271,7 +282,7 @@ def _register_routes(app, db, mail, User, Book, BookBorrowing, Log):
             msg.attach(f"Borrow_Receipt_{receipt_number}.pdf", "application/pdf",
                        pdf_buffer.getvalue())
             msg.html = render_template(template, **ctx)
-            mail.send(msg)
+            _send_mail_async(msg)
 
             _log(db, Log, borrower.id, 'EMAIL_NOTIFICATION',
                  f'Borrow notification sent to {borrower.email} (Receipt: {receipt_number})',
@@ -309,7 +320,7 @@ def _register_routes(app, db, mail, User, Book, BookBorrowing, Log):
             msg.attach(f"Return_Receipt_{receipt_number}.pdf", "application/pdf",
                        pdf_buffer.getvalue())
             msg.html = render_template(template, **ctx)
-            mail.send(msg)
+            _send_mail_async(msg)
 
             _log(db, Log, borrower.id, 'EMAIL_NOTIFICATION',
                  f'Return notification sent to {borrower.email} (Receipt: {receipt_number})',
@@ -396,7 +407,7 @@ def _register_routes(app, db, mail, User, Book, BookBorrowing, Log):
                         html=render_template('reset_password_email.html',
                                              user=user, reset_url=reset_url)
                     )
-                    mail.send(msg)
+                    _send_mail_async(msg)
                     _log(db, Log, user.id, 'PASSWORD_RESET_REQUEST',
                          f'Reset requested for {email}', request.remote_addr)
                     db.session.commit()
@@ -1158,7 +1169,7 @@ def _register_routes(app, db, mail, User, Book, BookBorrowing, Log):
                                  f"Your temporary password is: {temp_pw}\n\n"
                                  f"Please log in and change it immediately."
                         )
-                        mail.send(msg)
+                        _send_mail_async(msg)
                         flash('Password reset. Temporary password emailed to the staff member.', 'info')
                     except Exception:
                         flash(f'Password reset. Temporary password (email failed): {temp_pw}', 'warning')
